@@ -1,25 +1,46 @@
+<div align="center">
+
 # TikTok Mass Unlike
+
+**Clear thousands of liked videos from your TikTok account, straight from the browser console.**
+
+![no dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![runtime](https://img.shields.io/badge/runs%20in-browser%20console-blue)
+![license](https://img.shields.io/badge/license-MIT-lightgrey)
+![platform](https://img.shields.io/badge/tested%20on-Chromium-orange)
+
+</div>
+
+---
+
+TikTok gives you no way to bulk-remove likes. If you've built up thousands over the years, your only option is tapping each heart by hand. This script does the tapping for you.
 
 > [!CAUTION]
 > TikTok rate limits bulk unliking. If the console counter keeps climbing but your liked tab doesn't shrink, your requests are being silently dropped. Stop, wait an hour, and verify before running another batch. Automating actions on your account carries some risk of being flagged. Use at your own risk.
 
-Removes liked videos from your TikTok account, one batch at a time.
-
-Built after hitting 10k+ likes with no bulk-remove option anywhere in the app.
-
 > [!NOTE]
-> This only works on the web version at tiktok.com. The desktop and mobile apps have no console to paste into.
+> Web only. The desktop and mobile apps have no console to paste into.
 
-## How to use this script
+<br>
 
-1. Go to your profile and open the **Liked** tab
-2. Click the first video so it opens in the player
-3. Press `F12` to open DevTools
-4. Go to the **Console** tab
-5. Paste the following code and hit enter:
+## Quick start
+
+| | |
+|---|---|
+| **1** | Go to your profile, open the **Liked** tab |
+| **2** | Click the first video so it opens in the player |
+| **3** | Press `F12` → **Console** tab |
+| **4** | Paste the script below, hit enter |
+| **5** | Leave the tab visible and let it run |
+
+<br>
+
+## The script
 
 <details>
-<summary>Click to expand</summary>
+<summary><b>Click to expand</b></summary>
+
+<br>
 
 ```javascript
 /**
@@ -123,75 +144,163 @@ unlikeBatch();
 
 </details>
 
-(If you're unable to paste into the console, you might have to type `allow pasting` and hit enter)
+<sub>Can't paste into the console? Type `allow pasting` first, hit enter, then paste.</sub>
 
-6. Leave the tab visible and let it run. It stops after 300 videos
-7. Run `unlikeBatch()` again for the next batch
+<br>
 
-You can track progress by watching the `unliked N / 300` prints in the Console tab.
-
-To stop early:
+## Controls
 
 ```js
-STOP = true
+unlikeBatch()      // run another batch of 300
+unlikeBatch(50)    // run a smaller batch
+STOP = true        // stop cleanly after the current video
 ```
 
-Or just refresh the page.
+Refreshing the page also kills it instantly.
+
+<br>
+
+## What you'll see
+
+```
+starting, target 300. type  STOP = true  to halt
+unliked 1 / 300
+unliked 2 / 300
+unliked 3 / 300
+...
+batch done. unliked 300
+run  unlikeBatch()  again for another batch
+```
+
+<br>
 
 ## How it works
 
-The script finds the like button in the player, confirms the heart is red (meaning currently liked), clicks it, then presses ArrowDown to advance to the next video. It polls for the heart every 100ms rather than sleeping a fixed amount, so it moves as fast as the page loads.
+```
+  find the heart in the player
+           ↓
+  is it red? (= currently liked)
+           ↓
+  click it, count it
+           ↓
+  press ArrowDown → next video
+           ↓
+  poll every 100ms for the next red heart
+```
+
+The red check matters: clicking a heart that's already grey would **re-like** the video. Checking the color first makes the script safe to run over a partially-cleared list.
+
+<br>
 
 ## Config
 
 | Option | Default | What it does |
-|---|---|---|
+|:--|:--|:--|
 | `batchSize` | `300` | Videos to unlike per run |
 | `heartTimeout` | `4000` | Max ms to wait for the next heart before counting a miss |
 | `clickDelay` | `250` | Pause after clicking so the unlike registers |
 | `advanceDelay` | `400` | Pause after moving to the next video |
 | `maxMisses` | `5` | Consecutive misses before stopping |
 
-Raise `clickDelay` and `advanceDelay` if unlikes stop registering.
+<sub>Raise `clickDelay` and `advanceDelay` if unlikes stop registering.</sub>
+
+<br>
 
 ## FAQ
 
-**Q: Why not just send requests to the API directly? That would be way faster**
+<details>
+<summary><b>Why not just hit the API directly? That would be way faster</b></summary>
 
-A: TikTok's `webmssdk.js` signs every request with `X-Gnarly` and `X-Dynosaur` parameters computed over the full URL, including the video ID. A hand-written `fetch` to `/api/commit/item/digg/` gets rejected with `Web SDK blocked`. Clicking the real button lets TikTok's own SDK do the signing, which is why the UI approach works and direct requests don't.
+<br>
 
-**Q: Can I replay a captured request from the Network tab?**
+TikTok's `webmssdk.js` signs every request with `X-Gnarly` and `X-Dynosaur` parameters computed over the full URL, video ID included. A hand-written `fetch` to `/api/commit/item/digg/` comes back with:
 
-A: It works for that exact video and then stops. Swap in a different `aweme_id` and the signature no longer matches.
+```
+Web SDK blocked
+```
 
-**Q: It prints `no red heart` over and over**
+Clicking the real button lets TikTok's own SDK do the signing for us. That's the whole trick, and it's why the UI approach works while direct requests don't.
 
-A: A video needs to be open in the player, not the grid of thumbnails. Click into a liked video first. If a video is open and it still fails, TikTok changed their markup, inspect the heart and update the selectors in `findHeart()`.
+</details>
 
-**Q: The counter goes up but my likes are still there**
+<details>
+<summary><b>Can I replay a captured request from the Network tab?</b></summary>
 
-A: You're rate limited. Stop, wait an hour, then run a smaller batch with larger delays.
+<br>
 
-**Q: The same video repeats forever**
+It works for that exact video, then stops. Swap in a different `aweme_id` and the signature no longer matches, because the signature is computed over the full URL.
 
-A: The page lost keyboard focus. Click once on the video area, then rerun.
+</details>
 
-**Q: Console shows `Promise {<pending>}`**
+<details>
+<summary><b>It prints <code>no red heart</code> over and over</b></summary>
 
-A: That's normal. The function is async so the console prints the pending promise immediately. The script is still running, look for the log lines underneath.
+<br>
 
-**Q: How long does 10k likes take?**
+A video needs to be **open in the player**, not the grid of thumbnails. Click into a liked video first.
 
-A: Roughly an hour per 1000 when the page keeps up, so several hours spread across sessions. Leave it in a side window.
+If a video is open and it still fails, TikTok changed their markup. Inspect the heart element and update the selectors in `findHeart()`.
 
-**Q: Can it run in a background tab?**
+</details>
 
-A: No. Browsers throttle timers in hidden tabs. Keep the window visible, even if it's off to the side.
+<details>
+<summary><b>The counter goes up but my likes are still there</b></summary>
 
-**Q: Is there a faster version?**
+<br>
 
-A: Not one that works. See the first FAQ entry.
+You're rate limited. Stop, wait an hour, then run a smaller batch with larger delays.
 
-## Disclaimer
+</details>
 
-Use on your own account. This automates clicks you could make manually. Provided as-is, with no warranty.
+<details>
+<summary><b>The same video repeats forever</b></summary>
+
+<br>
+
+The page lost keyboard focus. Click once on the video area, then rerun.
+
+</details>
+
+<details>
+<summary><b>Console shows <code>Promise {&lt;pending&gt;}</code></b></summary>
+
+<br>
+
+Normal. The function is async, so the console prints the pending promise immediately. The script is still running, look for the log lines underneath.
+
+</details>
+
+<details>
+<summary><b>How long does 10k likes take?</b></summary>
+
+<br>
+
+Roughly an hour per 1000 when the page keeps up, so several hours spread across sessions. Leave it running in a side window.
+
+</details>
+
+<details>
+<summary><b>Can it run in a background tab?</b></summary>
+
+<br>
+
+No. Browsers throttle timers in hidden tabs. Keep the window visible, even if it's pushed off to the side.
+
+</details>
+
+<details>
+<summary><b>Is there a faster version?</b></summary>
+
+<br>
+
+Not one that works. See the first entry.
+
+</details>
+
+<br>
+
+---
+
+<div align="center">
+<sub>Use on your own account. This automates clicks you could make manually. Provided as-is, no warranty.</sub>
+</div>

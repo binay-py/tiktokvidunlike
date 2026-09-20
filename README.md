@@ -15,6 +15,10 @@
 
 TikTok gives you no way to bulk-remove likes. If you've built up thousands over the years, your only option is tapping each heart by hand. This script does the tapping for you.
 
+<p align="center">
+  <img src="docs/tiktok-unlike.gif" alt="Browser console running unlikeBatch(), printing unliked N / 300 as it works through the liked videos." width="100%">
+</p>
+
 > [!CAUTION]
 > TikTok rate limits bulk unliking. If the console counter keeps climbing but your liked tab doesn't shrink, your requests are being silently dropped. Stop, wait an hour, and verify before running another batch. Automating actions on your account carries some risk of being flagged. Use at your own risk.
 
